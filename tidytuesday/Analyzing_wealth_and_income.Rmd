@@ -8,6 +8,7 @@ editor_options:
 ---
 
 ```{r}
+setwd("C:/Users/jesus/proyectos/JGF_R_projects/tidytuesday")
 library(tidyverse)
 library(tidytuesdayR)
 library(scales)
@@ -114,7 +115,72 @@ tt$race_wealth %>%
   theme(legend.position = "none")
 # Me he quedado en el minuto 25 más o menos
 
+
+tt$income_time %>% 
+  spread(percentile, income_family) %>% 
+  ggplot(aes(year, `50th`, ymin = `10th`, ymax = `90th`)) +
+  geom_line() +
+  geom_ribbon(alpha = .25) +
+  expand_limits(y=0) +
+  scale_y_continuous(labels = dollar) +
+  labs(x = "Year", y = "Family income(median with 10th and 90th percentiles)")
+
+
+tt$income_limits %>% 
+  filter(dollar_type == "2019 Dollars") %>% 
+  filter(income_quintile == "Lowest") %>% 
+  mutate(race = fct_reorder(race, -income_dollars)) %>% 
+    ggplot(aes(year, income_dollars, color = race)) +
+    geom_line() +
+  labs(y = "Top 5% income limit (2019 Dollars)")
+
+
+
+tt$income_limits %>% 
+  filter(dollar_type == "2019 Dollars") %>% 
+  distinct(race, year, income_quintile, .keep_all = TRUE) %>% 
+  spread(income_quintile, income_dollars) %>% 
+  mutate(race = fct_reorder(race, -Fourth)) %>% 
+  ggplot(aes(year, ymin = Lowest, ymax = Fourth, fill = race)) +
+  geom_ribbon(alpha = .25) +
+  expand_limits(y=0) +
+  scale_y_continuous(labels = dollar) +
+  labs(x = "Year", y = "20th to 80th income quintiles)")
+
+
+
+
+```
+
+```{r}
+library(plotly)
+#Graficos interactivos
+
+g <- tt$income_limits %>% 
+  filter(dollar_type == "2019 Dollars") %>% 
+  distinct(race, year, income_quintile, .keep_all = TRUE) %>% 
+  mutate(income_quintile = fct_reorder(income_quintile, -income_dollars)) %>% 
+  ggplot(aes(year, income_dollars, color = income_quintile)) +
+  geom_line() +
+  facet_wrap(~race) +
+  scale_y_continuous(labels = dollar) +
+  labs(y = "Income quintile", color = "")
+
+ggplotly(g)
 ```
 
 
+```{r}
+tt$income_aggregate %>% 
+  group_by(year, race) %>% 
+  filter(income_quintile != "Top 5%") %>% 
+  mutate(income_share = income_share / 100,
+         income_quintile = fct_inorder(income_quintile)) %>% 
+  ggplot(aes(year, income_share, fill = income_quintile)) +
+  geom_area() +
+  facet_wrap(~race) +
+  labs(y = "%share of income", fill = "Income quintile",
+       title = "Income distribution over time by race")
+
+```
 
