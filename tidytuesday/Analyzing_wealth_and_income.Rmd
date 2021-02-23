@@ -1,0 +1,120 @@
+---
+title: "Tidyverse-1"
+author: "Jesus Gonzalez Ferrer"
+date: "22/2/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+library(scales)
+theme_set(theme_light())
+```
+
+```{r}
+#Para hacer casillas 
+ctrl + alt + i
+
+?function_name
+#te dice lo que hace una funcion
+```
+
+
+```{r}
+ctrl + shift + m
+%>% 
+%>%
+  
+```
+
+```{r load}
+tt <- tt_load("2021-02-09")
+```
+
+```{r}
+tt$lifetime_earn %>% 
+  ggplot(aes(lifetime_earn, race, fill = gender)) + 
+  geom_col(position = "dodge") + 
+  scale_x_continuous(labels = dollar )
+
+tt$student_debt %>% 
+  mutate(race = fct_reorder(race, -loan_debt_pct)) %>% 
+  ggplot(aes(year, loan_debt_pct, color = race)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = percent) +
+  labs(y = "% of families with student loan debt")
+  
+
+
+tt$student_debt %>% 
+  mutate(race = fct_reorder(race, -loan_debt_pct)) %>% 
+  ggplot(aes(year, loan_debt, color = race)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = dollar) +
+  labs(y = "Average loan debt")
+
+tt$retirement %>% 
+  mutate(race = fct_reorder(race, -retirement)) %>% 
+  ggplot(aes(year, retirement, color = race)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = dollar) +
+  labs(y = "Average family liquid retirement savings")
+
+tt$home_owner %>% 
+  mutate(race = fct_reorder(race, -home_owner_pct)) %>% 
+  ggplot(aes(year, home_owner_pct, color = race)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = percent) +
+  labs(y = "Home ownership percentage")
+
+
+tt$race_wealth %>% 
+  mutate(race = fct_reorder(race, -wealth_family)) %>% 
+  ggplot(aes(year, wealth_family, color = race)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = dollar) +
+  labs(y = "racewealth") +
+  facet_wrap(~ type)
+
+```
+
+```{r}
+plot_by_race <- function(data, column, labels = dollar ) {
+  data %>% 
+    mutate(race = fct_reorder(race, -{{ column }})) %>% 
+    ggplot(aes(year, {{ column }}, color = race)) +
+    geom_line() + 
+    expand_limits(y = 0) +
+    scale_y_continuous(labels = labels) 
+}
+
+```
+
+```{r}
+last_year <- tt$race_wealth %>% 
+  group_by(race) %>% 
+  top_n(1,year)
+
+tt$race_wealth %>% 
+  mutate(race = fct_reorder(race, -wealth_family)) %>% 
+  ggplot(aes(year, wealth_family, color = race)) +
+  geom_line() + 
+  geom_text(aes(label = race, color = NULL, nudge_x = .2), hjust = 0, data = last_year) +
+  expand_limits(y = 0, x= 2024 ) +
+  scale_y_continuous(labels = dollar) +
+  facet_wrap(~type, scales = "free_y") + 
+  theme(legend.position = "none")
+# Me he quedado en el minuto 25 más o menos
+
+```
+
+
+
