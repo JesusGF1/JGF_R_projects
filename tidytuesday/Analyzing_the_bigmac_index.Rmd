@@ -7,6 +7,7 @@ output: html_document
 
 
 ```{r}
+setwd("C:/Users/jesus/proyectos/JGF_R_projects/tidytuesday")
 library(tidyverse)
 library(tidytuesdayR)
 library(scales)
@@ -62,6 +63,9 @@ bigmac %>%
 
 ```
 
+
+
+
 ```{r}
 bigmac %>% 
   filter(country_total == max(country_total)) %>% 
@@ -72,6 +76,155 @@ bigmac %>%
   mutate(usd_recalculated = (big_mac_ex - dollar_ex) / dollar_ex)
 
 ```
+```{r}
+bigmac %>% 
+  filter(country_total == max(country_total)) %>% 
+  group_by(date) %>% 
+  mutate(usd_price = local_price[iso_a3 == "USA"]) %>% 
+  mutate(big_mac_ex = local_price / usd_price) %>% 
+  select(date, iso_a3, country, local_price, dollar_ex, usd_price, big_mac_ex, usd_raw, gdp_dollar, usd_adjusted) %>%
+  mutate(usd_recalculated = (big_mac_ex - dollar_ex) / dollar_ex) %>% 
+  filter(!is.na(gdp_dollar))
+```
+```{r}
+bigmac %>% 
+  filter(country_total == max(country_total)) %>% 
+  group_by(date) %>% 
+  mutate(usd_price = local_price[iso_a3 == "USA"],
+         us_gdp = gdp_dollar[iso_a3 == "USA"]) %>%
+  ungroup() %>% 
+  mutate(big_mac_ex = local_price / usd_price) %>% 
+  select(date, iso_a3, country, local_price, dollar_ex, usd_price, big_mac_ex, 
+         usd_raw, gdp_dollar, usd_adjusted) %>%
+  mutate(usd_recalculated = (big_mac_ex - dollar_ex) / dollar_ex) %>% 
+  filter(!is.na(gdp_dollar))
+
+#The lower the countries GDP the lower the hamburguer price should be
+#
+```
+```{r}
+bigmac %>%
+  filter(country_total == max(country_total)) %>% 
+  select(date, country, local_price, dollar_ex, usd_raw, gdp_dollar, usd_adjusted) %>% 
+  filter(!is.na(gdp_dollar)) %>% 
+  ggplot(aes(date, usd_raw)) +
+  geom_line() +
+  expand_limits(y= 0) +
+  facet_wrap(~country,scales = "free_y")
+#Based on bigmac the currency can be seen undervalued 
+#
+```
+
+```{r}
+bigmac %>% 
+  filter(country == "Argentina",
+         !is.na(gdp_dollar)) %>% 
+  ggplot(aes(date, local_price)) +
+  geom_line(aes(color = "Price in local currency")) +
+  geom_line(aes(y = dollar_price ,color = "Price in US dollars"))
+```
+```{r}
+bigmac %>%
+  group_by(date) %>% 
+  mutate(usd_price = local_price[iso_a3 == "USA"],
+         us_gdp = gdp_dollar[iso_a3 == "USA"]) %>% 
+  ungroup() %>% 
+  filter(country == "Argentina",
+         !is.na(gdp_dollar)) %>% 
+  mutate(price_from_usd = usd_price *dollar_ex) %>% 
+  ggplot(aes(date, local_price)) +
+  geom_line(aes(color = "Price in local currency")) +
+  geom_line(aes(y = price_from_usd ,color = "Price in US dollars"))
+
+#Interesting, if you go to Argentina, and bought big macs you would get more big
+#macs than you would expect.
+```
+```{r}
+library(ggrepel)
+bigmac %>% 
+  filter(date == max(date)) %>% 
+  ggplot(aes(gdp_dollar, usd_raw)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = country)) +
+  labs(x= "GDP per capita(dollars)",
+       y = "Raw Big Mac Index relative to USD")
+#In indonesia big macs are cheaper than you'd expect based on the currency conversion
+#rate. This is not surprising because for countries with Indonesia's GDP per capita
+# is roughly par for the course
+#What we are interested with are rich countries with cheap big macs or poor countries
+#with expensive Big macs. THis indicates that a currency is either undervalued or 
+#overvalued
+
+```
+
+```{r}
+library(ggrepel)
+bigmac %>% 
+  filter(date == max(date)) %>% 
+  ggplot(aes(gdp_dollar, usd_adjusted)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = country)) +
+  labs(x= "GDP per capita(dollars)",
+       y = "Adjusted  Big Mac Index relative to USD")
+#This shows that the adjusted says something about the currency, which helps get
+#the idea across. Hong Kong currency is undervalued, Euro is overvalued
+```
+
+```{r}
+bigmac %>% 
+  filter(date == max(date)) %>%
+  mutate(country = fct_reorder(country, usd_adjusted)) %>% 
+  ggplot(aes(usd_adjusted, country)) +
+  geom_col() + 
+  labs(x = "Big Mac Index(GDP-Adjusted)", y = "")
+```
+
+```{r}
+#me da error por un lock
+#Try removing ‘C:\Users\jesus\Documents\R\win-library\4.0/00LOCK’
+#Very cool use of gganimate 
+library(gganimate)
+bigmac %>% 
+  filter(!is.na(gdp_dollar)) %>% 
+  ggplot(aes(gdp_dollar, usd_adjusted)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = country)) +
+  transition_manual(date) +
+  labs(x = "GDP per capita(dollars)",
+       y = "Adjusted Big Mac Index relative to USD", 
+       title = "{ current_frame }")
+
+#In this way it is outputting them to the folder but I would like to see them 
+#in the viewer of Rstudio
+
+```
+We can say that it does not reflect a relationship between the GDP and the big
+max which is good because both things tell us different stories
+```{r}
+library(gganimate)
+bigmac %>% 
+  filter(!is.na(gdp_dollar)) %>% 
+  ggplot(aes(gdp_dollar, usd_adjusted)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text_repel(aes(label = country)) +
+  transition_time(date) +
+  labs(x = "GDP per capita(dollars)",
+       y = "Adjusted Big Mac Index relative to USD", 
+       title = "{frame_time }")
+
+```
+
+
+
+
+
+
+
+
 
 
 
