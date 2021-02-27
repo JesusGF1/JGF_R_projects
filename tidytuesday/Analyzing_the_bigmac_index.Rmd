@@ -220,6 +220,14 @@ bigmac %>%
 
 
 
+```{r}
+library(widyr)
+bigmac %>% 
+  pairwise_cor(country, date, local_price, sort = TRUE) %>% 
+  filter(item1 == "United States")
+
+
+```
 
 
 
