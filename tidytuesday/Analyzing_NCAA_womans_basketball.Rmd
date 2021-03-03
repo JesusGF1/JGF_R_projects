@@ -1,0 +1,90 @@
+---
+title: "NCAA-womens-basketball"
+author: "Jesus Gonzalez Ferrer"
+date: "2/3/2021"
+output: html_document
+---
+
+```{r}
+setwd("C:/Users/jesus/proyectos/JGF_R_projects/tidytuesday")
+library(tidyverse)
+library(tidytuesdayR)
+library(scales)
+theme_set(theme_light())
+```
+
+```{r}
+tt <- tt_load("2020-10-06")
+tt
+```
+
+```{r}
+tt$tournament
+```
+
+```{r}
+tt$tournament %>% 
+  count(year) %>% #with this we see that since 1994 there have been 64 teams
+  count(n)
+```
+
+```{r}
+tt$tournament %>% 
+  count(school, sort = TRUE)
+```
+
+```{r}
+tt$tournament %>% 
+  count(conf_place, sort = TRUE)
+```
+
+```{r}
+finish_levels <- c("1st", "2nd", "RSF", "RF", "NSF", "N2nd", "Champ")
+tournament <- tt$tournament %>% 
+  filter(year >= 1994) %>% 
+  mutate(tourney_finish = fct_relevel(tourney_finish, finish_levels))
+  
+```
+
+
+```{r}
+tournament %>% 
+  count(year) %>% 
+  ggplot(aes(year, n)) +
+  geom_col()
+```
+
+```{r}
+tournament %>% 
+  mutate(difference = full_w - (tourney_w + reg_w)) %>% 
+  count(difference)
+```
+
+*Regular wins are before the tournament
+*conf wins are a subset of regular
+*Tournament wins are in the bracket of 64
+
+```{r}
+tournament %>% 
+  group_by(seed) %>% 
+  summarize(n = n(), 
+            pct_win = mean(tourney_finish == "Champ"))
+```
+```{r}
+tournament %>% 
+  group_by(seed) %>% 
+  summarize(n = n(), 
+            pct_win = mean(tourney_finish %in% c("Champ", "N2nd")))
+```
+
+
+```{r}
+tournament %>% 
+  count(seed, tourney_finish) %>% 
+  group_by(seed) %>% 
+  ggplot(aes(tourney_finish, seed, fill = n)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "white", high = "red", midpoint = 50)
+#minuto 18
+```
+
