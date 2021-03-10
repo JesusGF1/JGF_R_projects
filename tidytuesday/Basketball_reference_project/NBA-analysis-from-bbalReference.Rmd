@@ -1,0 +1,72 @@
+---
+title: "NBA-Basketball-analysis"
+author: "Jesus Gonzalez Ferrer"
+date: "10/3/2021"
+output: html_document
+---
+```{r}
+setwd("C:/Users/jesus/proyectos/JGF_R_projects/tidytuesday/Basketball_reference_project")
+library(tidyverse)
+library(tidytuesdayR)
+library(scales)
+theme_set(theme_light())
+```
+
+
+
+```{r}
+NBA_df <- read.csv("NBA.csv")
+```
+
+```{r}
+temp_21 <- NBA_df %>% 
+  filter(Season == "2020-21")
+```
+
+```{r}
+temp_21 %>%
+  filter(MP >= 300, G >= 20, PTS >= 20) %>% 
+  ggplot(aes(x = DRtg, y = ORtg)) +
+  geom_point() +
+  geom_text(aes(label = Player))
+```
+
+```{r}
+temp_21 %>%
+  filter(MP >= 300, G >= 20) %>%
+  top_n(n = 70, PTS) %>% 
+  ggplot(aes(x = ORtg, y = DRtg)) +
+  geom_point() +
+  geom_text(aes(label = Player)) +
+  geom_smooth(method=lm, se = FALSE)
+```
+It is better the greater the ORtg and the lower the DRtg
+
+```{r}
+temp_21 %>%
+  filter(MP >= 300, G >= 20) %>%
+  top_n(n = 70, PTS) %>% 
+  ggplot(aes(x = PTS, y = FG.)) +
+  geom_point() +
+  geom_text(aes(label = Player)) +
+  geom_smooth(method=lm, se = FALSE)
+```
+Here we can see a bias towards big man or people who attack close to the rim. 
+This happens because the stat we are taking into account
+is FG percentage and not the adjusted FG that takes into account that a 3 is 
+worth more than a 2 point shot. We should get the effective FG percentage
+```{r}
+temp_21 %>%
+  mutate(eFG = (FG + 0.5*X3P)/FGA) %>% 
+  filter(MP >= 300, G >= 20) %>%
+  top_n(n = 70, PTS) %>% 
+  ggplot(aes(x = PTS, y = eFG)) +
+  geom_point() +
+  geom_text(aes(label = Player)) +
+  geom_smooth(method=lm, se = FALSE)
+```
+
+Here we can see the real difference. For example, if we look at curry in the two
+graphs we can see how this adjustment better reflects the reality of the game.
+
+
